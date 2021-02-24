@@ -1,1 +1,0 @@
-perrian data science portos
