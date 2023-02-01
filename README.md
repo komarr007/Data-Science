@@ -1,1 +1,1 @@
-# Machine Learning task from Pierian Data
+# Machine Learning and data science project
