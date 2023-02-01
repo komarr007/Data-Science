@@ -119,7 +119,7 @@ Kelemahan:
 - Terbatas pada relasi linear
 - Buruk untuk data non linear
 
-** Support Vector Machine**
+**Support Vector Machine**
 
 Keunggulan:
 
