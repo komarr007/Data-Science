@@ -139,29 +139,8 @@ Pada tahap ini dilakukan pembagian data train sebesar 80% dan data test sebesar 
 ## Modeling Content Based Filtering
 
 
-Data yang telah diproses dilanjutkan kedalam tahap _modeling_. Pada _content based filtering_ dilakukan _pivoting_ tabel genre dengan melakukan pembuatan kolom baru dan membuat nilai pada kolom dan baris tersebut menjadi 1 jika di dalam kolom genre terdapat nilai yang menjadi kolom baru tersebut, setelah data di _pivot_ lalu dilakukan perhitungan _cosine similarity_ untuk menghitung kemiripan antar film.
+Data yang telah diproses dilanjutkan kedalam tahap _modeling_. Pada _content based filtering_ dilakukan _pivoting_ tabel genre dengan melakukan pembuatan kolom baru dan membuat nilai pada kolom dan baris tersebut menjadi 1 jika di dalam kolom genre terdapat nilai yang menjadi kolom baru tersebut, setelah data di _pivot_ lalu dilakukan perhitungan _cosine similarity_ untuk menghitung kemiripan antar film. Pemberian hasil dilakukan dengan menggunakan fungsi yang menghasilkan nilai _cosine similarity_ sama dengan 1 satu jika tidak ada yang sama dengan satu dipilih nilai terdekat dengan 1 lalu _output_ dari fungsi tersebut akan memberikan lima data rekomendasi seperti tabel di bawah:
 
-pemberian rekomendasi dilakukan dengan code berikut:
-
-```python
-def movie_recommendations(title, similarity_data=cosine_sim_df, items=movie_new[['title', 'genre']], k=5):
-    index = similarity_data.loc[:,title].to_numpy().argpartition(
-        range(-1, -k, -1))
-    
-    closest = similarity_data.columns[index[-1:-(k+2):-1]]
-    
-    closest = closest.drop(title, errors='ignore')
- 
-    return pd.DataFrame(closest).merge(items).head(k)
-```
-
-pemanggilan fungsi tersebut seperti berikut:
-
-```python
-movie_recommendations('Secrets & Lies (1996)')
-```
-
-dengan output:
     
 |  |                                             title |       Genre|
 |------:|--------------------------------------------------:|------:|
@@ -172,7 +151,7 @@ dengan output:
 |     4 |                                     Luther (2003) | Drama |
 
 
-Dapat dilihat bahwa _cosine similarity_ menggunakan rekomendasi berdasarkan jenis genre yang sama pada film rekomendasi yang diberikan.
+Dapat dilihat bahwa _cosine similarity_ menggunakan rekomendasi berdasarkan jenis genre yang sama pada film masukan yang diberikan, film masukan yang diberikan merupakan film Secrets & Lies (1996) dengan genre drama lalu fungsi merekomendasikan lima film yang memiliki _cosine similarity_ terbesar dari film masukan.
 
 ## Modeling Collaborative Filtering
 
@@ -203,58 +182,8 @@ Pada model ini data yang telah diproses dilakukan model fitting menggunakan mode
     Non-trainable params: 0
     __________________________________________________________________________________________________
 
-Pada model ini pemberian rekomendasi dilakukan dengan menggunakan code sebagai berikut:
 
-```python
-def output_recommendation(x):
-    
-    movie_watched = throwback_df[throwback_df.newUserId == user_id]
-
-    movie_not_watched = throwback_df[~throwback_df['newMovieId'].isin(movie_watched.newMovieId.values)][['title','rating','newMovieId']]
-
-    movie_id_pred = model.predict(x)
-    user_rate = movie_id_pred.flatten()
-
-    top_rate_indices = user_rate.argsort()[-20:][::1]
-    
-    user_top_movie = movie_watched.sort_values(by='rating',ascending=False)['title'].values
-    
-    movie_rec = []
-    counter_rec = 0
-    for _ in top_rate_indices:
-        movie_rec_title = movie_not_watched[movie_not_watched['newMovieId'] == _]['title'].unique()
-        if movie_rec_title.size != 0 and counter_rec <= 10:
-            movie_rec.append(movie_rec_title[0])
-            counter_rec += 1
-    
-    print("recommendation for user_id: ",user_id)
-    print("="*20)
-    print("top 3 movie by user: ")
-    counter_user = 0
-    for i in user_top_movie:
-        counter_user += 1
-        if counter_user <= 3:
-            print(i)
-            
-    print("="*20)
-    print("recommendation by system:")
-    
-    for i in movie_rec:
-        print(i)
-        
-    return None
-```
-
-dengan pemanggilan fungsi sebagai berikut:
-
-```python
-user_id = throwback_df.newUserId.sample(1).iloc[0]
-user_df_x = throwback_df[throwback_df['newUserId'] == user_id]
-x = [user_df_x['newUserId'],user_df_x['newMovieId']]
-
-output_recommendation(x)
-```
-Pada code pemanggilan menggunakan user id yang diambil satu secara random dan dilakukan prediksi menggunakan fungsi output_recommendation.
+Model ini dilatih menggunakan userId dan movieId serta target dari model tersebut adalah rating. Model akan melakukan prediksi terhadap masukan userId dan movieId lalu memprediksi besar rating yang user tersebut terima untuk rekomendasi film. Output di bawah dihasilkan dari pemanggilan menggunakan user id yang diambil satu secara random dan dilakukan prediksi menggunakan fungsi output_recommendation.
 
 dengan output sebagai berikut:
 
@@ -278,7 +207,20 @@ dengan output sebagai berikut:
     Grumpier Old Men (1995)
     American President, The (1995)
 
-## Evaluation
+## Evaluation Content Based Filtering
+
+Pada tahap ini dilakukan evaluasi menggunakan precision untuk model _content based filtering_ pada pengguaan _precision_ untuk model ini menggunakan persamaan seperti di bawah:
+
+$$Precision = Number \ of \ relevant \ recommendation/number \ of item \ recommended$$
+
+Dari model yang telah dilakukan pada tahap _model development content based filtering_ didapatkan bahwa dari 5 rekomendasi sistem seluruh hasil tersebut menunjukkan hasil genre yang sesuai yang artinya perhitungan precision dari model sebelumnya sebagai berikut:
+
+$$Precision = 5/5$$
+
+Persentase evaluasi model _content based filtering_ memiliki precision sebesar 100%.
+
+
+## Evaluation Collaborative Filtering
 
 Pada tahap ini dilakukan evaluasi untuk model collaborative filtering menggunakan metode evaluasi _Mean Squared Error_ dengan rumus MSE sebagai berikut:
 
@@ -293,6 +235,10 @@ Pada model ini hasil evaluasi ditunjukkan pada gambar di bawah:
 ![alternate text](MSE.jpg)
 
 Hasil MSE untuk train sebesar 0.67 dan hasil MSE untuk validation sebesar 0.74, hasil ini menunjukkan jarak antara nilai prediksi dan nilai sebenarnya pada testing data sebesar 0.74. Hasil ini menunjukkan jarak tidak sampai 1 yang artinya jarak cukup kecil dan performa model baik.
+
+## Conclusion
+
+Pada proyek ini penyelesaian dapat dilakukan menggunakan dua metode yaitu _content based filtering_ dan _collaborative filtering_. Pengolahan data agar data dapat diolah untuk pendekatan sistem rekomendasi berbasis konten dan berbasis kolaborasi telah dilakukan dan memenuhi goals pertama, serta pembangunan model untuk mengimplementasikan data juga telah dilakukan pada proyek ini dengan hasil sistem rekomendasi menggunakan _collaborative filtering_ menghasilkan hasil yang cukup baik dengan nilai MSE _testing_ sebesar 0.74 dan hasil untuk _content based filtering_ memiliki nilai _precision_ sebesar 100%.
 
 ## _Referensi:_
 
